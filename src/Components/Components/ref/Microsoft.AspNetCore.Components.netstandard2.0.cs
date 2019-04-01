@@ -700,13 +700,21 @@ namespace Microsoft.AspNetCore.Components.Layouts
 }
 namespace Microsoft.AspNetCore.Components.Rendering
 {
+    [System.Runtime.InteropServices.StructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public partial struct ComponentRenderedText
+    {
+        private object _dummy;
+        private int _dummyPrimitive;
+        public int ComponentId { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
+        public System.Collections.Generic.IEnumerable<string> Tokens { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
+    }
     public partial class HtmlRenderer : Microsoft.AspNetCore.Components.Rendering.Renderer
     {
         public HtmlRenderer(System.IServiceProvider serviceProvider, System.Func<string, string> htmlEncoder, Microsoft.AspNetCore.Components.Rendering.IDispatcher dispatcher) : base (default(System.IServiceProvider)) { }
         protected override void HandleException(System.Exception exception) { }
         [System.Diagnostics.DebuggerStepThroughAttribute]
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Components.Rendering.RenderedHtmlResult> RenderComponentAsync(System.Type componentType, Microsoft.AspNetCore.Components.ParameterCollection initialParameters) { throw null; }
-        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Components.Rendering.RenderedHtmlResult> RenderComponentAsync<TComponent>(Microsoft.AspNetCore.Components.ParameterCollection initialParameters) where TComponent : Microsoft.AspNetCore.Components.IComponent { throw null; }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Components.Rendering.ComponentRenderedText> RenderComponentAsync(System.Type componentType, Microsoft.AspNetCore.Components.ParameterCollection initialParameters) { throw null; }
+        public System.Threading.Tasks.Task<Microsoft.AspNetCore.Components.Rendering.ComponentRenderedText> RenderComponentAsync<TComponent>(Microsoft.AspNetCore.Components.ParameterCollection initialParameters) where TComponent : Microsoft.AspNetCore.Components.IComponent { throw null; }
         protected override System.Threading.Tasks.Task UpdateDisplayAsync(in Microsoft.AspNetCore.Components.Rendering.RenderBatch renderBatch) { throw null; }
     }
     public partial interface IDispatcher
@@ -724,14 +732,6 @@ namespace Microsoft.AspNetCore.Components.Rendering
         public Microsoft.AspNetCore.Components.RenderTree.ArrayRange<int> DisposedEventHandlerIDs { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
         public Microsoft.AspNetCore.Components.RenderTree.ArrayRange<Microsoft.AspNetCore.Components.RenderTree.RenderTreeFrame> ReferenceFrames { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
         public Microsoft.AspNetCore.Components.RenderTree.ArrayRange<Microsoft.AspNetCore.Components.RenderTree.RenderTreeDiff> UpdatedComponents { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
-    }
-    [System.Runtime.InteropServices.StructLayoutAttribute(System.Runtime.InteropServices.LayoutKind.Sequential)]
-    public partial struct RenderedHtmlResult
-    {
-        private object _dummy;
-        private int _dummyPrimitive;
-        public int ComponentId { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
-        public System.Collections.Generic.IEnumerable<string> Tokens { [System.Runtime.CompilerServices.CompilerGeneratedAttribute]get { throw null; } }
     }
     public abstract partial class Renderer : System.IDisposable
     {
