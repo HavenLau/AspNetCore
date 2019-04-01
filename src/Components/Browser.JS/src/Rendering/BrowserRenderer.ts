@@ -408,7 +408,7 @@ function clearBetween(start: Node, end: Node): void {
   const endIndex = children.indexOf(end as unknown as LogicalElement);
 
   // We remove the end component comment from the DOM as we don't need it after this point.
-  for (let i = removeStart; i <= endIndex; i++) {
+  for (let i = removeStart; i < endIndex; i++) {
     removeLogicalChild(logicalParent, removeStart);
   }
 

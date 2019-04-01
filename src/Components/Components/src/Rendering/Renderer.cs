@@ -496,7 +496,7 @@ namespace Microsoft.AspNetCore.Components.Rendering
                 var componentState = GetOptionalComponentState(array[i].ComponentId);
                 if (componentState != null)
                 {
-                    ProcessComponent(componentState, batch);
+                    ProcessComponent(componentState, ref batch);
                 }
             }
 
@@ -527,7 +527,7 @@ namespace Microsoft.AspNetCore.Components.Rendering
                     var componentState = GetOptionalComponentState(array[i]);
                     if (componentState != null)
                     {
-                        ProcessComponent(componentState, batch);
+                        ProcessComponent(componentState, ref batch);
                     }
                 }
 
@@ -538,7 +538,7 @@ namespace Microsoft.AspNetCore.Components.Rendering
                 await result;
             }
 
-            void ProcessComponent(ComponentState state, List<Task> batch)
+            void ProcessComponent(ComponentState state, ref List<Task> batch)
             {
                 if (state != null)
                 {

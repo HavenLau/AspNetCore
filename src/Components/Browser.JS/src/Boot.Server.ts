@@ -5,10 +5,10 @@ import { MessagePackHubProtocol } from '@aspnet/signalr-protocol-msgpack';
 import { fetchBootConfigAsync, loadEmbeddedResourcesAsync } from './BootCommon';
 import { CircuitHandler } from './Platform/Circuits/CircuitHandler';
 import { AutoReconnectCircuitHandler } from './Platform/Circuits/AutoReconnectCircuitHandler';
-import CircuitManager from './Platform/Circuits/CircuitManager';
 import RenderQueue from './Platform/Circuits/RenderQueue';
 import { ConsoleLogger } from './Platform/Logging/Loggers';
 import { LogLevel, ILogger } from './Platform/Logging/ILogger';
+import { discoverPrerenderedCircuits, startCircuit } from './Platform/Circuits/CircuitManager';
 
 async function boot(): Promise<void> {
 
@@ -30,7 +30,7 @@ async function boot(): Promise<void> {
 
   const initialConnection = await initializeConnection(circuitHandlers, logger);
 
-  const circuits = CircuitManager.discoverPrerenderedCircuits(document);
+  const circuits = discoverPrerenderedCircuits(document);
   for (let i = 0; i < circuits.length; i++) {
     const circuit = circuits[i];
     for(let j = 0; j < circuit.components.length; j++){
@@ -42,9 +42,9 @@ async function boot(): Promise<void> {
   // Ensure any embedded resources have been loaded before starting the app
   await embeddedResourcesPromise;
 
-  const startCircuit = await CircuitManager.startCircuit(initialConnection);
+  const circuit = await startCircuit(initialConnection);
 
-  if (!startCircuit) {
+  if (!circuit) {
     logger.log(LogLevel.Information, 'No preregistered components to render.');
   }
 
@@ -64,8 +64,8 @@ async function boot(): Promise<void> {
 
   const reconnectTask = reconnect();
 
-  if (startCircuit) {
-    circuits.push(startCircuit);
+  if (circuit) {
+    circuits.push(circuit);
   }
 
   await reconnectTask;

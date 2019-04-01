@@ -390,7 +390,7 @@ namespace Microsoft.AspNetCore.Components.Rendering
             Assert.Equal(expectedHtml, result);
         }
 
-        private IEnumerable<string> GetResult(Task<RenderedHtmlResult> task)
+        private IEnumerable<string> GetResult(Task<ComponentRenderedText> task)
         {
             Assert.True(task.IsCompleted);
             if (task.IsCompletedSuccessfully)

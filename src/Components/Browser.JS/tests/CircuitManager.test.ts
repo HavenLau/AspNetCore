@@ -1,6 +1,6 @@
 (global as any).DotNet = { attachReviver: jest.fn() };
 
-import CircuitManager from '../src/Platform/Circuits/CircuitManager';
+import { discoverPrerenderedCircuits } from '../src/Platform/Circuits/CircuitManager';
 import { NullLogger } from '../src/Platform/Logging/Loggers';
 import { JSDOM } from 'jsdom';
 
@@ -21,7 +21,7 @@ describe('CircuitManager', () => {
       </body>
     </html>`);
 
-    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
+    const results = discoverPrerenderedCircuits(dom.window.document);
 
     expect(results.length).toEqual(1);
     expect(results[0].components.length).toEqual(1);
@@ -51,7 +51,7 @@ describe('CircuitManager', () => {
       </body>
     </html>`);
 
-    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
+    const results = discoverPrerenderedCircuits(dom.window.document);
 
     expect(results.length).toEqual(1);
     expect(results[0].components.length).toEqual(2);
@@ -85,7 +85,7 @@ describe('CircuitManager', () => {
       </body>
     </html>`);
 
-    expect(() => CircuitManager.discoverPrerenderedCircuits(dom.window.document))
+    expect(() => discoverPrerenderedCircuits(dom.window.document))
       .toThrow();
   });
 
@@ -108,7 +108,7 @@ describe('CircuitManager', () => {
       </body>
     </html>`);
 
-    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
+    const results = discoverPrerenderedCircuits(dom.window.document);
 
     for (let i = 0; i < results.length; i++) {
       const result = results[i];

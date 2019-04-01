@@ -47,20 +47,21 @@ namespace Microsoft.AspNetCore.Components.Rendering
         /// <param name="componentType">The type of the <see cref="IComponent"/>.</param>
         /// <param name="initialParameters">A <see cref="ParameterCollection"/> with the initial parameters to render the component.</param>
         /// <returns>A <see cref="Task"/> that on completion returns a sequence of <see cref="string"/> fragments that represent the HTML text of the component.</returns>
-        public async Task<RenderedHtmlResult> RenderComponentAsync(Type componentType, ParameterCollection initialParameters)
+        public async Task<ComponentRenderedText> RenderComponentAsync(Type componentType, ParameterCollection initialParameters)
         {
             var (componentId, frames) = await CreateInitialRenderAsync(componentType, initialParameters);
 
             if (frames.Count == 0)
             {
-                return new RenderedHtmlResult(-1, Array.Empty<string>());
+                // The component didn't produce any output.
+                return new ComponentRenderedText(componentId, Array.Empty<string>());
             }
             else
             {
                 var result = new List<string>();
                 var newPosition = RenderFrames(result, frames, 0, frames.Count);
                 Debug.Assert(newPosition == frames.Count);
-                return new RenderedHtmlResult(componentId, result);
+                return new ComponentRenderedText(componentId, result);
             }
         }
 
@@ -71,7 +72,7 @@ namespace Microsoft.AspNetCore.Components.Rendering
         /// <typeparam name="TComponent">The type of the <see cref="IComponent"/>.</typeparam>
         /// <param name="initialParameters">A <see cref="ParameterCollection"/> with the initial parameters to render the component.</param>
         /// <returns>A <see cref="Task"/> that on completion returns a sequence of <see cref="string"/> fragments that represent the HTML text of the component.</returns>
-        public Task<RenderedHtmlResult> RenderComponentAsync<TComponent>(ParameterCollection initialParameters) where TComponent : IComponent
+        public Task<ComponentRenderedText> RenderComponentAsync<TComponent>(ParameterCollection initialParameters) where TComponent : IComponent
         {
             return RenderComponentAsync(typeof(TComponent), initialParameters);
         }

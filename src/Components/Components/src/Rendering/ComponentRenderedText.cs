@@ -8,9 +8,9 @@ namespace Microsoft.AspNetCore.Components.Rendering
     /// <summary>
     /// Represents the result of rendering a component into static html.
     /// </summary>
-    public struct RenderedHtmlResult
+    public struct ComponentRenderedText
     {
-        internal RenderedHtmlResult(int componentId, IEnumerable<string> tokens)
+        internal ComponentRenderedText(int componentId, IEnumerable<string> tokens)
         {
             ComponentId = componentId;
             Tokens = tokens;
