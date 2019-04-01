@@ -38,6 +38,7 @@ export default class RenderQueue {
     }
 
     try {
+      this.nextBatchId++;
       this.logger.log(LogLevel.Information, `Applying batch ${receivedBatchId}.`);
       renderBatch(this.browserRendererId, new OutOfProcessRenderBatch(batchData));
       this.completeBatch(connection, receivedBatchId);

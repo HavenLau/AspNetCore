@@ -53,6 +53,7 @@ describe('RenderQueue', () => {
     queue.processBatch(2, new Uint8Array(0), connection);
 
     expect(sendMock.mock.calls.length).toEqual(1);
+    expect(queue.getLastBatchid()).toEqual(2);
   });
 
 });
