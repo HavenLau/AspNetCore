@@ -1,10 +1,10 @@
 (global as any).DotNet = { attachReviver: jest.fn() };
 
-import CircuitRegistry from '../src/Platform/Circuits/CircuitRegistry';
+import CircuitManager from '../src/Platform/Circuits/CircuitManager';
 import { NullLogger } from '../src/Platform/Logging/Loggers';
 import { JSDOM } from 'jsdom';
 
-describe('CircuitRegistry', () => {
+describe('CircuitManager', () => {
 
   it('discoverPrerenderedCircuits returns discovered prerendered circuits', () => {
     const dom = new JSDOM(`<!doctype HTML>
@@ -21,10 +21,11 @@ describe('CircuitRegistry', () => {
       </body>
     </html>`);
 
-    const results = CircuitRegistry.discoverPrerenderedCircuits(dom.window.document, NullLogger.instance);
+    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
 
     expect(results.length).toEqual(1);
-    const result = results[0];
+    expect(results[0].components.length).toEqual(1);
+    const result = results[0].components[0];
     expect(result.circuitId).toEqual("1234");
     expect(result.rendererId).toEqual(2);
     expect(result.componentId).toEqual(1);
@@ -50,22 +51,22 @@ describe('CircuitRegistry', () => {
       </body>
     </html>`);
 
-    const results = CircuitRegistry.discoverPrerenderedCircuits(dom.window.document, NullLogger.instance);
+    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
 
-    expect(results.length).toEqual(2);
-
-    const first = results[0];
+    expect(results.length).toEqual(1);
+    expect(results[0].components.length).toEqual(2);
+    const first = results[0].components[0];
     expect(first.circuitId).toEqual("1234");
     expect(first.rendererId).toEqual(2);
     expect(first.componentId).toEqual(1);
 
-    const second = results[1];
+    const second = results[0].components[1];
     expect(second.circuitId).toEqual("1234");
     expect(second.rendererId).toEqual(2);
     expect(second.componentId).toEqual(2);
   });
 
-  it('discoverPrerenderedCircuits skips malformed circuits', () => {
+  it('discoverPrerenderedCircuits throws for malformed circuits', () => {
     const dom = new JSDOM(`<!doctype HTML>
     <html>
       <head>
@@ -84,10 +85,8 @@ describe('CircuitRegistry', () => {
       </body>
     </html>`);
 
-    const results = CircuitRegistry.discoverPrerenderedCircuits(dom.window.document, NullLogger.instance);
-
-    expect(results.length).toEqual(0);
-
+    expect(() => CircuitManager.discoverPrerenderedCircuits(dom.window.document))
+      .toThrow();
   });
 
   it('discoverPrerenderedCircuits initializes circuits', () => {
@@ -109,11 +108,14 @@ describe('CircuitRegistry', () => {
       </body>
     </html>`);
 
-    const results = CircuitRegistry.discoverPrerenderedCircuits(dom.window.document, NullLogger.instance);
+    const results = CircuitManager.discoverPrerenderedCircuits(dom.window.document);
 
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
-      result.initialize();
+      for (let j = 0; j < result.components.length; j++) {
+        const component = result.components[j];
+        component.initialize();
+      }
     }
 
   });

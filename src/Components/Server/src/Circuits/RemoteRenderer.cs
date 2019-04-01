@@ -145,19 +145,7 @@ namespace Microsoft.AspNetCore.Components.Browser.Rendering
         public Task ProcessBufferedRenderBatches()
         {
             // Upon reconnection we send all the pending batches (we'll let the client sort the order out) 
-            return Task.WhenAll(PendingRenderBatches.Select(b => ErrorHandledWrite(WriteBatchBytesAsync(b))));
-
-            async Task ErrorHandledWrite(Task batch)
-            {
-                try
-                {
-                    await batch;
-                }
-                catch (Exception e)
-                {
-                    HandleException(e);
-                }
-            }
+            return Task.WhenAll(PendingRenderBatches.Select(b => WriteBatchBytesAsync(b)));
         }
 
         private async Task WriteBatchBytesAsync(PendingRender pending)

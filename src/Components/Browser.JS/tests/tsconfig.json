@@ -1,6 +1,3 @@
 {
-  "extends": "../tsconfig.base.json",
-  "compilerOptions": {
-    "downlevelIteration": true
-  }
+  "extends": "../tsconfig.json",
 }

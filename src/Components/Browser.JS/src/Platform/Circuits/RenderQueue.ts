@@ -1,17 +1,11 @@
 import { renderBatch } from '../../Rendering/Renderer';
 import { OutOfProcessRenderBatch } from '../../Rendering/RenderBatch/OutOfProcessRenderBatch';
 import { ILogger, LogLevel } from '../Logging/ILogger';
-
-export enum BatchStatus {
-  Pending = 1,
-  Processed = 2,
-  Queued = 3
-}
+import { HubConnection } from '@aspnet/signalr';
 
 export default class RenderQueue {
   private static renderQueues = new Map<number, RenderQueue>();
 
-  private pendingRenders = new Map<number, Uint8Array>();
   private nextBatchId = 2;
   public browserRendererId: number;
   public logger: ILogger;
@@ -32,56 +26,27 @@ export default class RenderQueue {
     return newQueue;
   }
 
-  public enqueue(receivedBatchId: number, receivedBatchData: Uint8Array): BatchStatus {
+  public processBatch(receivedBatchId: number, batchData: Uint8Array, connection: HubConnection): void {
     if (receivedBatchId < this.nextBatchId) {
-      this.logger.log(LogLevel.Debug, `Batch ${receivedBatchId} already processed. Waiting for batch ${this.nextBatchId}.`);
-      return BatchStatus.Processed;
+      this.logger.log(LogLevel.Information, `Batch ${receivedBatchId} already processed. Waiting for batch ${this.nextBatchId}.`);
+      return;
     }
 
-    if (this.pendingRenders.has(receivedBatchId)) {
-      this.logger.log(LogLevel.Debug, `Batch ${receivedBatchId} already queued. Waiting for batch ${this.nextBatchId}.`);
-      return BatchStatus.Pending;
+    if (receivedBatchId > this.nextBatchId) {
+      this.logger.log(LogLevel.Information, `Waiting for batch ${this.nextBatchId}. Batch ${receivedBatchId} not processed.`);
+      return;
     }
-
-    this.logger.log(LogLevel.Debug, `Batch ${receivedBatchId} successfully queued.`);
-    this.pendingRenders.set(receivedBatchId, receivedBatchData);
-    return BatchStatus.Queued;
-  }
-
-  public renderPendingBatches(connection: signalR.HubConnection): void {
-    let batchId: number | undefined;
-    let batchData: Uint8Array | undefined;
 
     try {
-      let next = this.tryDequeueNextBatch();
-      batchId = next.batchId;
-      batchData = next.batchData;
-      while (batchId && batchData) {
-        this.logger.log(LogLevel.Information, `Applying batch ${batchId}.`);
-        renderBatch(this.browserRendererId, new OutOfProcessRenderBatch(batchData));
-        this.completeBatch(connection, batchId);
-
-        next = this.tryDequeueNextBatch();
-        batchId = next.batchId;
-        batchData = next.batchData;
-      }
-    } catch (ex) {
-      this.logger.log(LogLevel.Error, `There was an error applying batch ${batchId}.`);
+      this.logger.log(LogLevel.Information, `Applying batch ${receivedBatchId}.`);
+      renderBatch(this.browserRendererId, new OutOfProcessRenderBatch(batchData));
+      this.completeBatch(connection, receivedBatchId);
+    } catch (error) {
+      this.logger.log(LogLevel.Error, `There was an error applying batch ${receivedBatchId}.`);
 
       // If there's a rendering exception, notify server *and* throw on client
-      connection.send('OnRenderCompleted', batchId, ex.toString());
-      throw ex;
-    }
-  }
-
-  private tryDequeueNextBatch(): { batchId?: number; batchData?: Uint8Array } {
-    const batchId = this.nextBatchId;
-    const batchData = this.pendingRenders.get(this.nextBatchId);
-    if (batchData != undefined) {
-      this.dequeueBatch();
-      return { batchId, batchData };
-    } else {
-      return {};
+      connection.send('OnRenderCompleted', receivedBatchId, error.toString());
+      throw error;
     }
   }
 
@@ -89,18 +54,11 @@ export default class RenderQueue {
     return this.nextBatchId - 1;
   }
 
-  private dequeueBatch(): void {
-    this.pendingRenders.delete(this.nextBatchId);
-    this.nextBatchId++;
-  }
-
   private async completeBatch(connection: signalR.HubConnection, batchId: number): Promise<void> {
-    for (let i = 0; i < 3; i++) {
-      try {
-        await connection.send('OnRenderCompleted', batchId, null);
-      } catch {
-        this.logger.log(LogLevel.Warning, `Failed to deliver completion notification for render '${batchId}' on attempt '${i}'.`);
-      }
+    try {
+      await connection.send('OnRenderCompleted', batchId, null);
+    } catch {
+      this.logger.log(LogLevel.Warning, `Failed to deliver completion notification for render '${batchId}'.`);
     }
   }
 }

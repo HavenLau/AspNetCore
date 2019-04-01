@@ -27,15 +27,9 @@
 
 const logicalChildrenPropname = createSymbolOrFallback('_blazorLogicalChildren');
 const logicalParentPropname = createSymbolOrFallback('_blazorLogicalParent');
+const logicalEndSiblingPropname = createSymbolOrFallback('_blazorLogicalEnd');
 
-export function toLogicalElement(element: Node, allowExistingContents?: boolean) {
-  // Normally it's good to assert that the element has started empty, because that's the usual
-  // situation and we probably have a bug if it's not. But for the element that contain prerendered
-  // root components, we want to let them keep their content until we replace it.
-  if (element.childNodes.length > 0 && !allowExistingContents) {
-    throw new Error('New logical elements must start empty, or allowExistingContents must be true');
-  }
-
+export function toLogicalRootCommentElement(start: Comment, end: Comment): LogicalElement {
   // Now that we support start/end comments as component delimiters we are going to be setting up
   // adding the components rendered output as siblings of the start/end tags (between).
   // For that to work, we need to appropriately configure the parent element to be a logical element
@@ -52,19 +46,29 @@ export function toLogicalElement(element: Node, allowExistingContents?: boolean)
   // |- *div
   // |- *component
   // |- *footer
-  if(element instanceof Comment && allowExistingContents){
-    if(!element.parentNode){
-      throw new Error(`Comment not connected to the DOM ${element.textContent}`);
-    }
-    const parent = element.parentNode;
-    const parentLogicalElement = toLogicalElement(parent,  true);
-    const children = getLogicalChildrenArray(parentLogicalElement);
-    Array.from(parent.childNodes).forEach(n => children.push(n as any as LogicalElement));
-    element[logicalParentPropname] = parentLogicalElement;
+  if(!start.parentNode){
+    throw new Error(`Comment not connected to the DOM ${start.textContent}`);
+  }
+
+  const parent = start.parentNode;
+  const parentLogicalElement = toLogicalElement(parent, /* allow existing contents */  true);
+  const children = getLogicalChildrenArray(parentLogicalElement);
+  Array.from(parent.childNodes).forEach(n => children.push(n as unknown as LogicalElement));
+  start[logicalParentPropname] = parentLogicalElement;
+  start[logicalEndSiblingPropname] = end;
+  return toLogicalElement(start, /* allowExistingContents */ true);
+}
+
+export function toLogicalElement(element: Node, allowExistingContents?: boolean): LogicalElement {
+  // Normally it's good to assert that the element has started empty, because that's the usual
+  // situation and we probably have a bug if it's not. But for the element that contain prerendered
+  // root components, we want to let them keep their content until we replace it.
+  if (element.childNodes.length > 0 && !allowExistingContents) {
+    throw new Error('New logical elements must start empty, or allowExistingContents must be true');
   }
 
   element[logicalChildrenPropname] = [];
-  return element as any as LogicalElement;
+  return element as unknown as LogicalElement;
 }
 
 export function createAndInsertLogicalContainer(parent: LogicalElement, childIndex: number): LogicalElement {
@@ -132,6 +136,10 @@ export function removeLogicalChild(parent: LogicalElement, childIndex: number) {
 
 export function getLogicalParent(element: LogicalElement): LogicalElement | null {
   return (element[logicalParentPropname] as LogicalElement) || null;
+}
+
+export function getLogicalSiblingEnd(element: LogicalElement): LogicalElement | null {
+  return (element[logicalEndSiblingPropname] as LogicalElement) || null;
 }
 
 export function getLogicalChild(parent: LogicalElement, childIndex: number): LogicalElement {

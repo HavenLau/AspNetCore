@@ -5,8 +5,8 @@ import { MessagePackHubProtocol } from '@aspnet/signalr-protocol-msgpack';
 import { fetchBootConfigAsync, loadEmbeddedResourcesAsync } from './BootCommon';
 import { CircuitHandler } from './Platform/Circuits/CircuitHandler';
 import { AutoReconnectCircuitHandler } from './Platform/Circuits/AutoReconnectCircuitHandler';
-import CircuitRegistry from './Platform/Circuits/CircuitRegistry';
-import RenderQueue, { BatchStatus } from './Platform/Circuits/RenderQueue';
+import CircuitManager from './Platform/Circuits/CircuitManager';
+import RenderQueue from './Platform/Circuits/RenderQueue';
 import { ConsoleLogger } from './Platform/Logging/Loggers';
 import { LogLevel, ILogger } from './Platform/Logging/ILogger';
 
@@ -30,16 +30,19 @@ async function boot(): Promise<void> {
 
   const initialConnection = await initializeConnection(circuitHandlers, logger);
 
-  const circuits = CircuitRegistry.discoverPrerenderedCircuits(document, logger);
+  const circuits = CircuitManager.discoverPrerenderedCircuits(document);
   for (let i = 0; i < circuits.length; i++) {
     const circuit = circuits[i];
-    circuit.initialize();
+    for(let j = 0; j < circuit.components.length; j++){
+      const component = circuit.components[j];
+      component.initialize();
+    }
   }
 
   // Ensure any embedded resources have been loaded before starting the app
   await embeddedResourcesPromise;
 
-  const startCircuit = await CircuitRegistry.startCircuit(initialConnection);
+  const startCircuit = await CircuitManager.startCircuit(initialConnection);
 
   if (!startCircuit) {
     logger.log(LogLevel.Information, 'No preregistered components to render.');
@@ -80,17 +83,12 @@ async function initializeConnection(circuitHandlers: CircuitHandler[], logger: I
     .build();
 
   connection.on('JS.BeginInvokeJS', DotNet.jsCallDispatcher.beginInvokeJSFromDotNet);
-  connection.on('JS.RenderBatch', (browserRendererId: number, renderId: number, batchData: Uint8Array) => {
-    logger.log(LogLevel.Information, `Received render batch for ${browserRendererId} with id ${renderId} and ${batchData.byteLength} bytes.`);
+  connection.on('JS.RenderBatch', (browserRendererId: number, batchId: number, batchData: Uint8Array) => {
+    logger.log(LogLevel.Information, `Received render batch for ${browserRendererId} with id ${batchId} and ${batchData.byteLength} bytes.`);
 
     const queue = RenderQueue.getOrCreateQueue(browserRendererId, logger);
 
-    const result = queue.enqueue(renderId, batchData);
-    if (result === BatchStatus.Processed) {
-      connection.send('OnRenderCompleted', renderId, null);
-    }
-
-    queue.renderPendingBatches(connection);
+    queue.processBatch(batchId, batchData, connection);
   });
 
   connection.onclose(error => circuitHandlers.forEach(h => h.onConnectionDown && h.onConnectionDown(error)));

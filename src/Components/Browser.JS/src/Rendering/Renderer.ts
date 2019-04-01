@@ -2,26 +2,33 @@
 import { System_Object, System_String, System_Array, MethodHandle, Pointer } from '../Platform/Platform';
 import { platform } from '../Environment';
 import { RenderBatch } from './RenderBatch/RenderBatch';
-import { BrowserRenderer, StartEndPair } from './BrowserRenderer';
+import { BrowserRenderer } from './BrowserRenderer';
+import { toLogicalElement, LogicalElement } from './LogicalElements';
 
 interface BrowserRendererRegistry {
   [browserRendererId: number]: BrowserRenderer;
 }
 const browserRenderers: BrowserRendererRegistry = {};
 
-export function attachRootComponentToElement(browserRendererId: number, elementSelector: string | StartEndPair, componentId: number): void {
-
-  const { start, end } = elementSelector as StartEndPair;
-  const element = start && end ? elementSelector as StartEndPair : document.querySelector(elementSelector as string);
-  if (!element) {
-    throw new Error(`Could not find any element matching selector '${elementSelector}'.`);
-  }
+export function attachRootComponentToLogicalElement(browserRendererId: number, logicalElement: LogicalElement, componentId: number): void {
 
   let browserRenderer = browserRenderers[browserRendererId];
   if (!browserRenderer) {
     browserRenderer = browserRenderers[browserRendererId] = new BrowserRenderer(browserRendererId);
   }
-  browserRenderer.attachRootComponentToElement(componentId, element);
+
+  browserRenderer.attachRootComponentToLogicalElement(componentId, logicalElement);
+}
+
+export function attachRootComponentToElement(browserRendererId: number, elementSelector: string, componentId: number): void {
+
+  const element = document.querySelector(elementSelector);
+  if (!element) {
+    throw new Error(`Could not find any element matching selector '${elementSelector}'.`);
+  }
+
+  // 'allowExistingContents' to keep any prerendered content until we do the first client-side render
+  attachRootComponentToLogicalElement(browserRendererId, toLogicalElement(element, /* allow existing contents */ true), componentId);
 }
 
 export function renderBatch(browserRendererId: number, batch: RenderBatch): void {
