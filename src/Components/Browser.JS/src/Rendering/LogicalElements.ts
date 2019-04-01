@@ -56,6 +56,7 @@ export function toLogicalRootCommentElement(start: Comment, end: Comment): Logic
   Array.from(parent.childNodes).forEach(n => children.push(n as unknown as LogicalElement));
   start[logicalParentPropname] = parentLogicalElement;
   start[logicalEndSiblingPropname] = end;
+  toLogicalElement(end, /* allowExistingcontents */ true);
   return toLogicalElement(start, /* allowExistingContents */ true);
 }
 

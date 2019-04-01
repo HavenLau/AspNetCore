@@ -408,10 +408,12 @@ function clearBetween(start: Node, end: Node): void {
   const endIndex = children.indexOf(end as unknown as LogicalElement);
 
   // We remove the end component comment from the DOM as we don't need it after this point.
-  for (let i = removeStart; i < endIndex; i++) {
+  for (let i = removeStart; i <= endIndex; i++) {
     removeLogicalChild(logicalParent, removeStart);
   }
 
-  // We sanitize the start comment by removing all the information from it now that we don't need it anymore.
+  // We sanitize the start comment by removing all the information from it now that we don't need it anymore
+  // as it adds noise to the DOM. The P stands for 'Prerendered' just to separate it from other containers and
+  // is completely stylistic.
   start.textContent = '!';
 }
