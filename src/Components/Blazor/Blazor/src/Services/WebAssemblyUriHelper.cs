@@ -36,7 +36,7 @@ namespace Microsoft.AspNetCore.Blazor.Services
             // client-side (Mono) use, so it's OK to rely on synchronicity here.
             var baseUri = WebAssemblyJSRuntime.Instance.Invoke<string>(Interop.GetBaseUri);
             var uri = WebAssemblyJSRuntime.Instance.Invoke<string>(Interop.GetLocationHref);
-            base.InitializeState(uri, baseUri);
+            InitializeState(uri, baseUri);
         }
 
         /// <inheritdoc />

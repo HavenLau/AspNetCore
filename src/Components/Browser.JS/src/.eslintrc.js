@@ -13,6 +13,7 @@ module.exports = {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     // e.g. "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/indent": ["error", 2],
+    "@typescript-eslint/no-use-before-define": [ "off" ],
     "no-var": "error",
     "prefer-const": "error",
     "quotes": ["error", "single", { "avoidEscape": true }],

@@ -28,7 +28,7 @@ async function boot(): Promise<void> {
     return loadEmbeddedResourcesAsync(bootConfig);
   });
 
-  const initialConnection = await initializeConnection(circuitHandlers, logger); // eslint-disable-line @typescript-eslint/no-use-before-define
+  const initialConnection = await initializeConnection(circuitHandlers, logger);
 
   const circuits = CircuitRegistry.discoverPrerenderedCircuits(document, logger);
   for (let i = 0; i < circuits.length; i++) {
@@ -46,10 +46,10 @@ async function boot(): Promise<void> {
   }
 
   const reconnect = async (): Promise<boolean> => {
-    const reconnection = await initializeConnection(circuitHandlers, logger); // eslint-disable-line @typescript-eslint/no-use-before-define
+    const reconnection = await initializeConnection(circuitHandlers, logger);
     const results = await Promise.all(circuits.map(circuit => circuit.reconnect(reconnection)));
 
-    if (reconnectionFailed(results)) { // eslint-disable-line @typescript-eslint/no-use-before-define
+    if (reconnectionFailed(results)) {
       return false;
     }
 
@@ -94,14 +94,14 @@ async function initializeConnection(circuitHandlers: CircuitHandler[], logger: I
   });
 
   connection.onclose(error => circuitHandlers.forEach(h => h.onConnectionDown && h.onConnectionDown(error)));
-  connection.on('JS.Error', error => unhandledError(connection, error, logger)); // eslint-disable-line @typescript-eslint/no-use-before-define
+  connection.on('JS.Error', error => unhandledError(connection, error, logger));
 
   window['Blazor']._internal.forceCloseConnection = () => connection.stop();
 
   try {
     await connection.start();
   } catch (ex) {
-    unhandledError(connection, ex, logger); // eslint-disable-line @typescript-eslint/no-use-before-define
+    unhandledError(connection, ex, logger);
   }
 
   DotNet.attachDispatcher({

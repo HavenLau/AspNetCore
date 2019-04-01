@@ -18,10 +18,6 @@ namespace Microsoft.AspNetCore.Components.Browser.Rendering
 {
     internal class RemoteRenderer : HtmlRenderer
     {
-        internal const int MaxBatchSendAttempts = 3;
-        internal static readonly TimeSpan SendMessageRetryInterval = TimeSpan.FromSeconds(10);
-        internal static readonly TimeSpan SendMessageAcknowledgeInterval = TimeSpan.FromSeconds(1);
-
         private readonly IJSRuntime _jsRuntime;
         private readonly CircuitClientProxy _client;
         private readonly RendererRegistry _rendererRegistry;
@@ -168,56 +164,32 @@ namespace Microsoft.AspNetCore.Components.Browser.Rendering
         {
             // Send the render batch to the client
             // If the "send" operation fails (synchronously or asynchronously) or the client
-            // gets disconected retry three times and then give up. This likely mean that
+            // gets disconected simply give up. This likely means that
             // the circuit went offline while sending the data, so simply wait until the
             // client reconnects back or the circuit gets evicted because it stayed
             // disconnected for too long.
 
-            var currentAttempt = 0;
-            do
+            try
             {
-                try
+                if (!_client.Connected)
                 {
-                    if (!_client.Connected)
-                    {
-                        // If we detect that the client is offline. Simply stop trying to send the payload.
-                        // When the client reconnects we'll resend it.
-                        return;
-                    }
-
-                    if (!PendingRenderBatches.TryPeek(out var next) || pending.BatchId < next.BatchId)
-                    {
-                        // The client has ack this or a later batch already.
-                        return;
-                    }
-
-                    Log.BeginUpdateDisplayAsync(_logger, _client.ConnectionId);
-                    await _client.SendAsync("JS.RenderBatch", Id, pending.BatchId, pending.Data);
-                    await Task.Delay(SendMessageAcknowledgeInterval);
-                }
-                catch (Exception e)
-                {
-                    Log.SendBatchDataFailed(_logger, e);
-                    // Wait 10 seconds after we tried to send the payload, then check that that the client is still connected and
-                    // that we haven't received any ack from the client in the mean-time to retry.
-                    await Task.Delay(SendMessageRetryInterval);
+                    // If we detect that the client is offline. Simply stop trying to send the payload.
+                    // When the client reconnects we'll resend it.
+                    return;
                 }
 
-                currentAttempt++;
-            } while (currentAttempt < MaxBatchSendAttempts);
+                Log.BeginUpdateDisplayAsync(_logger, _client.ConnectionId);
+                await _client.SendAsync("JS.RenderBatch", Id, pending.BatchId, pending.Data);
+            }
+            catch (Exception e)
+            {
+                Log.SendBatchDataFailed(_logger, e);
+            }
 
             // We don't have to remove the entry from the list of pending batches if we fail to send it or the client fails to
             // acknowledge that it received it. We simply keep it in the queue until we receive another ack from the client for
             // a later batch (clientBatchId > thisBatchId) or the circuit becomes disconnected and we ultimately get evicted and
             // disposed.
-
-            if (_client.Connected &&
-                PendingRenderBatches.TryPeek(out var current) &&
-                pending.BatchId >= current.BatchId)
-            {
-                // If we are still connected after three attempts to send a given batch then we need to fail the rendering process.
-                HandleException(new InvalidOperationException("Max number of attempts to send a batch reached while the client was connected."));
-            }
         }
 
         public void OnRenderCompleted(long incomingBatchId, string errorMessageOrNull)

@@ -166,15 +166,6 @@ namespace Microsoft.AspNetCore.Components.Server
             {
                 _logger.LogError(ex, "Failed to transmit exception to client");
             }
-            finally
-            {
-                // Set the circuit disconnected.
-                // This will trigger the timeout that will eventually dispose the circuit.
-                // If we were able to send the notificiation back to the client, it will have
-                // aborted the connection.
-                // We could do this right away if we wanted to, as there's nothing else to do.
-                await _circuitRegistry.DisconnectAsync(circuitHost, circuitHost.Client.ConnectionId);
-            }
         }
 
         private CircuitHost EnsureCircuitHost()
